@@ -11,10 +11,8 @@ model = joblib.load("model.pkl")
 scaler = joblib.load("scaler.pkl")
 
 # California housing feature names
-FEATURE_NAMES = [
-    "MedInc", "HouseAge", "AveRooms", "AveBedrms",
-    "Population", "AveOccup", "Latitude", "Longitude"
-]
+
+
 
 @app.route("/")
 def home():
@@ -22,23 +20,29 @@ def home():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    data = request.get_json(force=True)
+    if request.is_json:
+        data = request.get_json()
+    else:
+        data = request.form
 
-    # Validate input keys
-    if not all(key in data for key in FEATURE_NAMES):
-        return jsonify({"error": f"Missing features. Required: {FEATURE_NAMES}"}), 400
+    input_data = np.array([[
+        float(data['MedInc']),
+        float(data['HouseAge']),
+        float(data['AveRooms']),
+        float(data['AveBedrms']),
+        float(data['Population']),
+        float(data['AveOccup']),
+        float(data['Latitude']),
+        float(data['Longitude'])
+    ]])
 
-    # Extract features in order
-    features = [data[key] for key in FEATURE_NAMES]
-    features_array = np.array(features).reshape(1, -1)
+    input_scaled = scaler.transform(input_data)
+    prediction = model.predict(input_scaled)
 
-    # Scale features
-    features_scaled = scaler.transform(features_array)
-
-    # Predict
-    prediction = model.predict(features_scaled)[0]
-
-    return jsonify({"predicted_median_house_value": round(prediction, 3)})
+    if request.is_json:
+        return jsonify({"prediction": float(prediction[0])})
+    else:
+        return f"<h2>Predicted Median House Value: ${prediction[0]:,.2f}</h2>"
 
 if __name__ == "__main__":
     app.run(debug=True)
