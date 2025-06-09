@@ -1,5 +1,6 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify,app,url_for,render_template
 import joblib
+
 import numpy as np
 import pandas as pd
 
@@ -17,7 +18,7 @@ FEATURE_NAMES = [
 
 @app.route("/")
 def home():
-    return "California Housing Price Prediction API"
+    return render_template('home.html')
 
 @app.route("/predict", methods=["POST"])
 def predict():
